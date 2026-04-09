@@ -5,9 +5,17 @@ from planners.planner import Planner
 class FakeProvider:
     def generate(self, system_prompt: str, user_message: str):
         if "Actor" in system_prompt:
+            patch = (
+                "diff --git a/config.yml b/config.yml\n"
+                "--- a/config.yml\n"
+                "+++ b/config.yml\n"
+                "@@ -1 +1 @@\n"
+                "-old: false\n"
+                "+old: true\n"
+            )
             return json.dumps({
                 "analysis": "Change config X to enable Y.",
-                "patch": "diff --git a/config.yml b/config.yml\n--- a/config.yml\n+++ b/config.yml\n@@ -1 +1 @@\n-old: false\n+old: true\n",
+                "patch": patch,
                 "instructions": "Apply and run config validation.",
                 "confidence": "high",
             })
