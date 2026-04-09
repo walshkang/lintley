@@ -5,8 +5,18 @@ Thanks for your interest! This document explains how to contribute so maintainer
 Getting started
 
 1. Fork the repo and create a topic branch: `git checkout -b feat/short-description`
-2. Run locally: `python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt` (if requirements exist)
-3. Run tests: `pytest` (project aims to provide tests for core agents)
+2. Create a venv and install dev tools:
+
+   python3 -m venv venv && source venv/bin/activate
+
+   # Use the formatting helper (creates .venv-format and installs black/ruff/jinja2)
+   ./scripts/format.sh
+
+   # Install test deps
+   python -m pip install --upgrade pip
+   python -m pip install pytest pytest-asyncio
+
+3. Run tests: `pytest -q` (use -q for concise output)
 
 Commit & PR guidelines
 

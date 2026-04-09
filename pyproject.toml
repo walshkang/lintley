@@ -7,3 +7,6 @@ line-length = 120
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "C", "B", "PLR"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-asyncio>=1.3.0", "jinja2>=3.0"]
