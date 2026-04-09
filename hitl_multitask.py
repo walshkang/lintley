@@ -278,15 +278,19 @@ def dashboard_cmd():
             print(f"  Pending approval: {len(pending_approval)}")
 
             if pending_approval:
-                print(f"\n🚨 Pending Approvals:")
+                print("\n🚨 Pending Approvals:")
                 for i, t in enumerate(pending_approval, 1):
                     risk = t["risk_level"]
-                    risk_icon = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(risk, "❓")
+                    risk_icon = {
+                        "high": "🔴",
+                        "medium": "🟡",
+                        "low": "🟢",
+                    }.get(risk, "❓")
                     print(f"  [{i}] {t['id']} — {t['title']} {risk_icon}")
 
-                print(f"\nApprove: python3 hitl_multitask.py approve <task_id>")
+                print("\nApprove: python3 hitl_multitask.py approve <task_id>")
             else:
-                print(f"\n✅ No pending approvals")
+                print("\n✅ No pending approvals")
 
             print("\nLast updated: ", datetime.now().strftime("%H:%M:%S"))
             print("(Refreshes every 5 seconds)")

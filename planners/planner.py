@@ -1,8 +1,13 @@
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict
 
 from agents_orchestrator import EnhancedRunner as DemoRunner
+
+
+# Tunable constants
+MAX_SMALL_SIZE = 400
+MAX_EXCERPT_LINES = 200
 
 
 class Planner:
@@ -13,7 +18,12 @@ class Planner:
     - Can dispatch a plan to a provider using DemoRunner (Actor->Observer->Patch)
     """
 
-    DEFAULT_AGENTS = ["SliceActor", "SliceObserver", "PatchAgent", "TestAgent"]
+    DEFAULT_AGENTS = [
+        "SliceActor",
+        "SliceObserver",
+        "PatchAgent",
+        "TestAgent",
+    ]
 
     def plan(
         self,
@@ -39,15 +49,21 @@ class Planner:
                 agents = self.DEFAULT_AGENTS
             else:
                 # balanced
-                effort = "medium" if size < 400 else "high"
-                agents = self.DEFAULT_AGENTS if effort != "low" else ["SliceActor", "PatchAgent"]
+                effort = "medium" if size < MAX_SMALL_SIZE else "high"
+                agents = (
+                    self.DEFAULT_AGENTS
+                    if effort != "low"
+                    else ["SliceActor", "PatchAgent"]
+                )
 
             slices.append(
                 {
                     "slice_id": slice_id,
                     "path": path,
                     "files": [path],
-                    "context_excerpt": "\n".join(content.splitlines()[:200]),
+                    "context_excerpt": "\n".join(
+                        content.splitlines()[:MAX_EXCERPT_LINES]
+                    ),
                     "agents": agents,
                     "effort": effort,
                     "metadata": {"size_lines": size},
