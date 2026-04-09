@@ -94,10 +94,18 @@ if __name__ == "__main__":
     class FakeProvider:
         def generate(self, system_prompt: str, user_message: str):
             if "Actor" in system_prompt or "SliceActor" in system_prompt:
+                patch = (
+                    "diff --git a/foo.txt b/foo.txt\n"
+                    "--- a/foo.txt\n"
+                    "+++ b/foo.txt\n"
+                    "@@ -1 +1 @@\n"
+                    "-old\n"
+                    "+new\n"
+                )
                 return json.dumps(
                     {
                         "analysis": "Make a small change to foo.txt to fix behavior.",
-                        "patch": "diff --git a/foo.txt b/foo.txt\n--- a/foo.txt\n+++ b/foo.txt\n@@ -1 +1 @@\n-old\n+new\n",
+                        "patch": patch,
                         "instructions": "Apply the patch and run tests.",
                         "confidence": "high",
                     }
