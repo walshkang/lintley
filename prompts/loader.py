@@ -43,13 +43,15 @@ def render_prompt(template: str, variables: Dict[str, Any]) -> str:
     surface. If Jinja2 isn't available, fall back to safe format_map.
     """
     safe_vars = {k: sanitize_user_input(str(v)) for k, v in variables.items()}
-    if _JINJA_AVAILABLE and _JINJA_ENV is not None:
+    # Use Jinja2 only when the template appears to use Jinja syntax ({{ }} or {% %})
+    if _JINJA_AVAILABLE and _JINJA_ENV is not None and ("{{" in template or "{%" in template):
         try:
             tmpl = _JINJA_ENV.from_string(template)
             return tmpl.render(**safe_vars)
         except Exception:
             # Fall back to simple format if templating fails
             return template.format_map(_Missing(**safe_vars))
+    # Default fallback: python format_map to preserve existing {var} templates
     return template.format_map(_Missing(**safe_vars))
 
 
