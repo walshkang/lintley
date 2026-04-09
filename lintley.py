@@ -34,7 +34,14 @@ def main():
     parser.add_argument("--files-json", help="JSON file with map of path->content")
     parser.add_argument("--model-hint", default="balanced")
     parser.add_argument("--concurrency", type=int, default=4)
-    parser.add_argument("--mock", action="store_true", default=True)
+    # mock is default; provide --no-mock to disable
+    parser.add_argument(
+        "--no-mock",
+        action="store_false",
+        dest="mock",
+        help="Disable the mock provider",
+    )
+    parser.set_defaults(mock=True)
     args = parser.parse_args()
 
     if args.files_json:
@@ -46,11 +53,18 @@ def main():
         return
 
     planner = Planner()
-    plan = planner.plan(args.task, files, model_hint=args.model_hint, concurrency_limit=args.concurrency)
+    plan = planner.plan(
+        args.task,
+        files,
+        model_hint=args.model_hint,
+        concurrency_limit=args.concurrency,
+    )
     print(json.dumps(plan, indent=2))
 
     provider = MockProvider()
-    print("Running plan (mock provider) — events will be printed as JSON-lines:")
+    print(
+        "Running plan (mock provider) — events will be printed as JSON-lines:"
+    )
     planner.dispatch(plan, provider)
 
 
