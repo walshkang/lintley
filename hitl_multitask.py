@@ -333,7 +333,16 @@ def approve_cmd(task_id: str, decision: str = "a"):
 
 
 def run_workflow_cmd(task_id: str):
-    """Run Actor → Observer → HITL for a task."""
+    """Run Actor → Observer → HITL for a task.
+
+    Loads prompt templates from prompts/, renders them safely, runs a local
+    adapter (LocalAdapter) for deterministic behavior, validates outputs and
+    saves them into task state.
+    """
+    from prompts.loader import load_prompts, render_prompt
+    from providers.local_adapter import LocalAdapter
+    from utils.safety import redact_secrets, validate_agent_output
+
     config = load_config()
     if not config:
         print("❌ Not configured. Run: python3 hitl_multitask.py setup")
@@ -350,15 +359,79 @@ def run_workflow_cmd(task_id: str):
     print(f"\nGoal: {task['goal']}")
     print(f"Context: {task['context'][:100]}...")
 
-    # Placeholder for actual Actor/Observer inference
-    print("\n⏳ Running Actor Agent...")
-    print("⏳ Running Observer Agent...")
+    # determine slice id (default to slice_a)
+    slice_id = task.get("slice_id") or "slice_a"
+    try:
+        prompts = load_prompts(slice_id)
+    except Exception:
+        prompts = load_prompts("slice_a")
 
+    vars = {"goal": task["goal"], "context": task["context"], "slice_id": slice_id}
+
+    adapter = LocalAdapter(model=config.get("model") or None)
+
+    # Run Actor
+    print("\n⏳ Running Actor Agent...")
+    actor_system = render_prompt(prompts.get("actor_system", ""), vars)
+    actor_user = render_prompt(prompts.get("actor_user", ""), vars)
+    try:
+        raw_actor = adapter.generate(actor_system, actor_user)
+        try:
+            actor_payload = json.loads(raw_actor)
+        except Exception:
+            actor_payload = {
+                "analysis": str(raw_actor),
+                "patch": "",
+                "instructions": "",
+                "confidence": "low",
+            }
+        ok, errors = validate_agent_output("actor", actor_payload)
+        if not ok:
+            actor_payload.setdefault("confidence", "low")
+            actor_payload.setdefault("analysis", str(actor_payload.get("analysis", "")) + " (validation-issues: " + ",".join(errors) + ")")
+    except Exception as e:
+        actor_payload = {"analysis": str(e), "patch": "", "instructions": "", "confidence": "low"}
+
+    task["actor_work"] = actor_payload
+    print("Actor result:")
+    print(json.dumps(redact_secrets(actor_payload), indent=2))
+
+    # Run Observer
+    print("\n⏳ Running Observer Agent...")
+    # include actor output in observer prompt for context
+    obs_vars = dict(vars)
+    obs_vars["actor_output"] = json.dumps(actor_payload)
+    observer_system = render_prompt(prompts.get("observer_system", ""), obs_vars)
+    observer_user = render_prompt(prompts.get("observer_user", ""), obs_vars)
+    # append actor output if template doesn't include it
+    if "actor_output" not in observer_user:
+        observer_user = observer_user + "\n\nActorOutput: " + json.dumps(actor_payload)
+
+    try:
+        raw_obs = adapter.generate(observer_system, observer_user)
+        try:
+            obs_payload = json.loads(raw_obs)
+        except Exception:
+            obs_payload = {
+                "verdict": "CAUTION",
+                "findings": [],
+                "risk_level": "medium",
+                "recommended_changes": str(raw_obs),
+            }
+        ok2, errs2 = validate_agent_output("observer", obs_payload)
+        if not ok2:
+            obs_payload.setdefault("verdict", "CAUTION")
+            obs_payload.setdefault("findings", []).append("validation-issues: " + ",".join(errs2))
+    except Exception as e:
+        obs_payload = {"verdict": "CAUTION", "findings": [str(e)], "risk_level": "medium", "recommended_changes": ""}
+
+    task["observer_review"] = obs_payload
+    task["risk_level"] = obs_payload.get("risk_level", "medium")
     task["status"] = "pending_approval"
-    task["actor_work"] = "[Actor work would go here]"
-    task["observer_review"] = "[Observer review would go here]"
-    task["risk_level"] = "medium"
     save_task(task)
+
+    print("Observer result:")
+    print(json.dumps(redact_secrets(obs_payload), indent=2))
 
     print(f"\n🚨 Awaiting approval. Run: python3 hitl_multitask.py approve {task_id}")
 
