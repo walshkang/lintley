@@ -1,0 +1,6 @@
+{
+  "title": "Fix SQL injection in user login",
+  "goal": "Review code for SQL injection vulnerabilities and propose secure fixes",
+  "context": "def process_user_input(user_input):\n    query = \"SELECT * FROM users WHERE id = \" + user_input\n    conn.execute(query)\n    return redirect(f\"/{user_input}\")",
+  "model_hint": "balanced"
+}
