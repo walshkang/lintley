@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from providers.mock_provider import MockProvider
 
-
+# fmt: off
 class SubprocessAdapter:
     """Adapter that calls a subprocess for generation.
 
