@@ -333,10 +333,9 @@ def approve_cmd(task_id: str, decision: str = "a"):
     save_task(task)
 
 
-def _prepare_prompts_and_adapter(task: dict, config: dict):
-    """Load prompts, render vars, and create a LocalAdapter instance."""
+def _prepare_prompts_and_adapter(task: dict, config: dict, provider_override: Optional[str] = None):
+    """Load prompts, render vars, and create an adapter instance based on provider."""
     from prompts.loader import load_prompts
-    from providers.local_adapter import LocalAdapter
 
     slice_id = task.get("slice_id") or "slice_a"
     try:
@@ -345,7 +344,24 @@ def _prepare_prompts_and_adapter(task: dict, config: dict):
         prompts = load_prompts("slice_a")
 
     vars = {"goal": task["goal"], "context": task["context"], "slice_id": slice_id}
-    adapter = LocalAdapter(model=config.get("model") or None)
+
+    provider = (provider_override or config.get("provider") or "mock").lower()
+    if provider in ("mock", "local"):
+        from providers.local_adapter import LocalAdapter
+
+        adapter = LocalAdapter(model=config.get("model") or None)
+    elif provider == "subprocess":
+        from providers.subprocess_adapter import SubprocessAdapter
+
+        # Allow config to pass a command list via 'command' key or default to SubprocessAdapter default
+        cmd = config.get("command")
+        adapter = SubprocessAdapter(command=cmd) if cmd else SubprocessAdapter()
+    else:
+        # Fallback to LocalAdapter (mock)
+        from providers.local_adapter import LocalAdapter
+
+        adapter = LocalAdapter(model=config.get("model") or None)
+
     return prompts, vars, adapter
 
 
@@ -447,7 +463,7 @@ def run_workflow_cmd(task_id: str):
     print(f"\nGoal: {task['goal']}")
     print(f"Context: {task['context'][:100]}...")
 
-    prompts, vars, adapter = _prepare_prompts_and_adapter(task, config)
+    prompts, vars, adapter = _prepare_prompts_and_adapter(task, config, provider_override)
 
     print("\n⏳ Running Actor Agent...")
     actor_payload = _run_actor(adapter, prompts, vars)
@@ -482,7 +498,18 @@ if __name__ == "__main__":
     elif cmd == "status":
         status_cmd()
     elif cmd == "execute" and len(sys.argv) > MIN_ARG_COUNT:
-        run_workflow_cmd(sys.argv[2])
+        task_id = sys.argv[2]
+        provider_override: Optional[str] = None
+        # support --provider=NAME or --provider NAME
+        for idx in range(3, len(sys.argv)):
+            a = sys.argv[idx]
+            if a.startswith("--provider="):
+                provider_override = a.split("=", 1)[1]
+                break
+            if a == "--provider" and idx + 1 < len(sys.argv):
+                provider_override = sys.argv[idx + 1]
+                break
+        run_workflow_cmd(task_id, provider_override)
     elif cmd == "approve" and len(sys.argv) > MIN_ARG_COUNT:
         approve_cmd(sys.argv[2], "a")
     elif cmd == "reject" and len(sys.argv) > MIN_ARG_COUNT:
