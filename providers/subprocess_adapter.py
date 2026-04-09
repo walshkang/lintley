@@ -23,8 +23,8 @@ class SubprocessAdapter:
 
     def generate(self, system_prompt: str, user_message: str) -> str:
         result = ""
-        # Mock shortcut
-        if len(self.command) == 1 and self.command[0] == "mock":
+        is_mock = len(self.command) == 1 and self.command[0] == "mock"
+        if is_mock:
             # Choose actor vs observer vs test by looking for keywords
             combined = (system_prompt or "")
             lower = combined.lower()
@@ -36,26 +36,25 @@ class SubprocessAdapter:
                 result = self._mock.generate(system_prompt, user_message)
             else:
                 result = json.dumps({"ok": True})
-            return result
-
-        # Otherwise run the user command
-        try:
-            # Prepare input
-            inp = f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_message}\n"
-            proc = subprocess.run(
-                self.command,
-                input=inp.encode("utf-8"),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=self.timeout,
-                check=False,
-            )
-            out = proc.stdout.decode("utf-8", errors="replace").strip()
-            if not out:
-                # include stderr if no stdout
-                out = proc.stderr.decode("utf-8", errors="replace").strip() or ""
-            return out
-        except subprocess.TimeoutExpired as e:
-            return json.dumps({"error": "timeout", "details": str(e)})
-        except Exception as e:
-            return json.dumps({"error": "subprocess-failed", "details": str(e)})
+        else:
+            try:
+                # Prepare input
+                inp = f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_message}\n"
+                proc = subprocess.run(
+                    self.command,
+                    input=inp.encode("utf-8"),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=self.timeout,
+                    check=False,
+                )
+                out = proc.stdout.decode("utf-8", errors="replace").strip()
+                if not out:
+                    # include stderr if no stdout
+                    out = proc.stderr.decode("utf-8", errors="replace").strip() or ""
+                result = out
+            except subprocess.TimeoutExpired as e:
+                result = json.dumps({"error": "timeout", "details": str(e)})
+            except Exception as e:
+                result = json.dumps({"error": "subprocess-failed", "details": str(e)})
+        return result
