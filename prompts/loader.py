@@ -6,8 +6,8 @@ PROMPTS_DIR = Path(__file__).parent
 
 def load_prompts() -> dict:
     prompts = {}
-    for p in PROMPTS_DIR.glob('*.json'):
-        if p.name == 'loader.py':
+    for p in PROMPTS_DIR.glob("*.json"):
+        if p.name == "loader.py":
             continue
         try:
             with open(p) as f:

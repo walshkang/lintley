@@ -29,9 +29,7 @@ class GPT5MiniAdapter:
             # Placeholder for real client initialization using HITL_API_KEY or local socket
             api_key = os.environ.get("HITL_API_KEY")
             if not api_key:
-                raise RuntimeError(
-                    "HITL_API_KEY required when HITL_USE_MOCK is false"
-                )
+                raise RuntimeError("HITL_API_KEY required when HITL_USE_MOCK is false")
             # Real implementation would go here
 
         # metadata
@@ -46,13 +44,9 @@ class GPT5MiniAdapter:
     ) -> str:
         """Synchronous generate API returning a JSON-serializable string or raw text."""
         if self.use_mock:
-            return self._mock.generate(
-                system_prompt, user_message, max_tokens=max_tokens
-            )
+            return self._mock.generate(system_prompt, user_message, max_tokens=max_tokens)
         # For now, raise; real call would integrate with LLM runtime
-        raise NotImplementedError(
-            "GPT5MiniAdapter real client not implemented yet"
-        )
+        raise NotImplementedError("GPT5MiniAdapter real client not implemented yet")
 
     async def stream(
         self,
@@ -63,8 +57,6 @@ class GPT5MiniAdapter:
         """Optional async stream API for future usage. Delegates to mock in dev."""
         if self.use_mock:
             # yield full string in one chunk to mimic streaming
-            yield self._mock.generate(
-                system_prompt, user_message, max_tokens=max_tokens
-            )
+            yield self._mock.generate(system_prompt, user_message, max_tokens=max_tokens)
             return
         raise NotImplementedError("stream not implemented for real client")

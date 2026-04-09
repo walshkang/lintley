@@ -45,16 +45,19 @@ class ProviderClient:
         if self.provider == "anthropic":
             global anthropic
             import anthropic as anthropic_module
+
             anthropic = anthropic_module
             self.client = anthropic.Anthropic(api_key=self.api_key)
         elif self.provider == "google":
             global google_generativeai
             import google.generativeai as genai_module
+
             google_generativeai = genai_module
             google_generativeai.configure(api_key=self.api_key)
         elif self.provider == "openai":
             global openai
             import openai as openai_module
+
             openai = openai_module
             self.client = openai_module.OpenAI(api_key=self.api_key)
 
@@ -81,9 +84,7 @@ class ProviderClient:
             )
             response = model.generate_content(
                 user_message,
-                generation_config=google_generativeai.types.GenerationConfig(
-                    max_output_tokens=max_tokens
-                ),
+                generation_config=google_generativeai.types.GenerationConfig(max_output_tokens=max_tokens),
             )
             return response.text
 
@@ -125,6 +126,7 @@ class ProviderClient:
 
         elif provider == "google":
             import google.generativeai as genai_module
+
             genai_module.configure(api_key=api_key)
             try:
                 models = genai_module.list_models()
@@ -140,6 +142,7 @@ class ProviderClient:
 
         elif provider == "openai":
             import openai as openai_module
+
             client = openai_module.OpenAI(api_key=api_key)
             try:
                 models = client.models.list()
@@ -291,9 +294,7 @@ def actor_agent(
         "Be explicit about assumptions you're making and limitations you're aware of."
     )
 
-    user_message = (
-        f"Task: {task}\n\nContext: {context}" if context else f"Task: {task}"
-    )
+    user_message = f"Task: {task}\n\nContext: {context}" if context else f"Task: {task}"
 
     content = provider.generate(system_prompt, user_message, max_tokens=1000)
     return {
@@ -303,9 +304,7 @@ def actor_agent(
     }
 
 
-def observer_agent(
-    provider: ProviderClient, task: str, actor_response: AgentResponse
-) -> AgentResponse:
+def observer_agent(provider: ProviderClient, task: str, actor_response: AgentResponse) -> AgentResponse:
     """
     The Observer Agent audits the Actor's work.
     It checks for hallucinations, goal drift, logical errors, and risky assumptions.

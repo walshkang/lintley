@@ -13,19 +13,23 @@ class FakeProvider:
                 "-old: false\n"
                 "+old: true\n"
             )
-            return json.dumps({
-                "analysis": "Change config X to enable Y.",
-                "patch": patch,
-                "instructions": "Apply and run config validation.",
-                "confidence": "high",
-            })
+            return json.dumps(
+                {
+                    "analysis": "Change config X to enable Y.",
+                    "patch": patch,
+                    "instructions": "Apply and run config validation.",
+                    "confidence": "high",
+                }
+            )
         if "Observer" in system_prompt:
-            return json.dumps({
-                "verdict": "PASS",
-                "findings": [],
-                "risk_level": "low",
-                "recommended_changes": "",
-            })
+            return json.dumps(
+                {
+                    "verdict": "PASS",
+                    "findings": [],
+                    "risk_level": "low",
+                    "recommended_changes": "",
+                }
+            )
         return "{}"
 
 

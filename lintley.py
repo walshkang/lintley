@@ -7,6 +7,7 @@ Usage examples:
 
 By default runs with MockProvider. Use --mock to force mock.
 """
+
 import argparse
 import json
 from pathlib import Path
@@ -62,9 +63,7 @@ def main():
     print(json.dumps(plan, indent=2))
 
     provider = MockProvider()
-    print(
-        "Running plan (mock provider) — events will be printed as JSON-lines:"
-    )
+    print("Running plan (mock provider) — events will be printed as JSON-lines:")
     planner.dispatch(plan, provider)
 
 

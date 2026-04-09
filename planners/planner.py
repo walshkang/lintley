@@ -4,7 +4,6 @@ from typing import Dict
 
 from agents_orchestrator import EnhancedRunner as DemoRunner
 
-
 # Tunable constants
 MAX_SMALL_SIZE = 400
 MAX_EXCERPT_LINES = 200
@@ -50,20 +49,14 @@ class Planner:
             else:
                 # balanced
                 effort = "medium" if size < MAX_SMALL_SIZE else "high"
-                agents = (
-                    self.DEFAULT_AGENTS
-                    if effort != "low"
-                    else ["SliceActor", "PatchAgent"]
-                )
+                agents = self.DEFAULT_AGENTS if effort != "low" else ["SliceActor", "PatchAgent"]
 
             slices.append(
                 {
                     "slice_id": slice_id,
                     "path": path,
                     "files": [path],
-                    "context_excerpt": "\n".join(
-                        content.splitlines()[:MAX_EXCERPT_LINES]
-                    ),
+                    "context_excerpt": "\n".join(content.splitlines()[:MAX_EXCERPT_LINES]),
                     "agents": agents,
                     "effort": effort,
                     "metadata": {"size_lines": size},

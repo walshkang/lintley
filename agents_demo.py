@@ -4,6 +4,7 @@ and emits JSON-lines events. Designed for red/green TDD with Mock/Fake providers
 
 Usage: python3 agents_demo.py
 """
+
 import json
 import time
 from typing import Any, Dict
@@ -26,10 +27,7 @@ class DemoRunner:
         system = p.get("system", "")
         template = p.get("user_template", "")
         try:
-            safe_kwargs = {
-                k: (v if v is not None else "")
-                for k, v in kwargs.items()
-            }
+            safe_kwargs = {k: (v if v is not None else "") for k, v in kwargs.items()}
             user = template.format(**safe_kwargs)
         except Exception:
             user = ""
@@ -96,19 +94,23 @@ if __name__ == "__main__":
     class FakeProvider:
         def generate(self, system_prompt: str, user_message: str):
             if "Actor" in system_prompt or "SliceActor" in system_prompt:
-                return json.dumps({
-                    "analysis": "Make a small change to foo.txt to fix behavior.",
-                    "patch": "diff --git a/foo.txt b/foo.txt\n--- a/foo.txt\n+++ b/foo.txt\n@@ -1 +1 @@\n-old\n+new\n",
-                    "instructions": "Apply the patch and run tests.",
-                    "confidence": "high",
-                })
+                return json.dumps(
+                    {
+                        "analysis": "Make a small change to foo.txt to fix behavior.",
+                        "patch": "diff --git a/foo.txt b/foo.txt\n--- a/foo.txt\n+++ b/foo.txt\n@@ -1 +1 @@\n-old\n+new\n",
+                        "instructions": "Apply the patch and run tests.",
+                        "confidence": "high",
+                    }
+                )
             if "Observer" in system_prompt or "SliceObserver" in system_prompt:
-                return json.dumps({
-                    "verdict": "PASS",
-                    "findings": [],
-                    "risk_level": "low",
-                    "recommended_changes": "",
-                })
+                return json.dumps(
+                    {
+                        "verdict": "PASS",
+                        "findings": [],
+                        "risk_level": "low",
+                        "recommended_changes": "",
+                    }
+                )
             return "{}"
 
     runner = DemoRunner(FakeProvider())

@@ -33,6 +33,7 @@ TASKS_DIR = STATE_DIR / "tasks"
 
 class TaskDefinition(TypedDict):
     """User-provided task definition."""
+
     id: str
     title: str
     goal: str
@@ -42,6 +43,7 @@ class TaskDefinition(TypedDict):
 
 class TaskState(TypedDict):
     """Internal task state."""
+
     id: str
     title: str
     goal: str
@@ -153,9 +155,7 @@ def setup_provider():  # noqa: C901, PLR0912, PLR0915
     else:
         print("⚠️  Could not auto-detect. Which provider?")
         print("  [1] Anthropic  [2] Google  [3] OpenAI")
-        choice = {"1": "anthropic", "2": "google", "3": "openai"}.get(
-            input("Choose: ").strip()
-        )
+        choice = {"1": "anthropic", "2": "google", "3": "openai"}.get(input("Choose: ").strip())
         if not choice:
             sys.exit(1)
         provider = choice
@@ -303,6 +303,7 @@ def dashboard_cmd():
             print("(Refreshes every 5 seconds)")
 
             import time
+
             time.sleep(5)
     except KeyboardInterrupt:
         print("\n\nDashboard closed.")

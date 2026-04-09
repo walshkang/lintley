@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Enhanced orchestrator that runs agent pipelines per slice in parallel.
-"""
+"""Enhanced orchestrator that runs agent pipelines per slice in parallel."""
+
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -67,27 +67,22 @@ class EnhancedRunner:
         actor_raw = self.provider.generate(actor_system, actor_user)
         try:
             actor_payload = json.loads(actor_raw)
-            ok, errors = validate_agent_output('actor', actor_payload)
+            ok, errors = validate_agent_output("actor", actor_payload)
             if not ok:
                 self._emit(
-                    'schema_failure',
+                    "schema_failure",
                     plan_task,
                     slice_id,
                     {"agent": "actor", "errors": errors},
                 )
                 actor_payload = {
-                    "analysis": actor_payload.get("analysis", "")
-                    if isinstance(actor_payload, dict)
-                    else "",
+                    "analysis": actor_payload.get("analysis", "") if isinstance(actor_payload, dict) else "",
                     "patch": "",
                     "instructions": "",
                     "confidence": "low",
                 }
             else:
-                actor_payload = {
-                    k: redact_secrets(v) if isinstance(v, str) else v
-                    for k, v in actor_payload.items()
-                }
+                actor_payload = {k: redact_secrets(v) if isinstance(v, str) else v for k, v in actor_payload.items()}
         except Exception:
             actor_payload = {
                 "analysis": actor_raw,
@@ -109,10 +104,10 @@ class EnhancedRunner:
             obs_raw = self.provider.generate(obs_system, obs_user)
             try:
                 obs_payload = json.loads(obs_raw)
-                ok, errors = validate_agent_output('observer', obs_payload)
+                ok, errors = validate_agent_output("observer", obs_payload)
                 if not ok:
                     self._emit(
-                        'schema_failure',
+                        "schema_failure",
                         plan_task,
                         slice_id,
                         {"agent": "observer", "errors": errors},
@@ -124,10 +119,7 @@ class EnhancedRunner:
                         "recommended_changes": "",
                     }
                 else:
-                    obs_payload = {
-                        k: redact_secrets(v) if isinstance(v, str) else v
-                        for k, v in obs_payload.items()
-                    }
+                    obs_payload = {k: redact_secrets(v) if isinstance(v, str) else v for k, v in obs_payload.items()}
             except Exception:
                 obs_payload = {
                     "verdict": "CAUTION",
@@ -165,10 +157,10 @@ class EnhancedRunner:
             test_raw = self.provider.generate(test_system, test_user)
             try:
                 test_payload = json.loads(test_raw)
-                ok, errors = validate_agent_output('test', test_payload)
+                ok, errors = validate_agent_output("test", test_payload)
                 if not ok:
                     self._emit(
-                        'schema_failure',
+                        "schema_failure",
                         plan_task,
                         slice_id,
                         {"agent": "test", "errors": errors},
@@ -180,10 +172,7 @@ class EnhancedRunner:
                         "failures": [],
                     }
                 else:
-                    test_payload = {
-                        k: redact_secrets(v) if isinstance(v, str) else v
-                        for k, v in test_payload.items()
-                    }
+                    test_payload = {k: redact_secrets(v) if isinstance(v, str) else v for k, v in test_payload.items()}
             except Exception:
                 test_payload = {
                     "total": 0,
