@@ -1,3 +1,4 @@
+# fmt: off
 """Local adapter wrapper used for local, deterministic runs in CI/tests.
 
 This is a thin shim around the existing MockProvider to provide a stable
@@ -40,3 +41,4 @@ class LocalAdapter:
             return resp
         return resp
 
+# fmt: on
