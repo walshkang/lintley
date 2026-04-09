@@ -439,7 +439,7 @@ def _run_observer(adapter, prompts, vars, actor_payload):
     return obs_payload
 
 
-def run_workflow_cmd(task_id: str):
+def run_workflow_cmd(task_id: str, provider_override: Optional[str] = None):
     """Run Actor → Observer → HITL for a task.
 
     This is a thin coordinator that delegates the heavy lifting to helpers so
