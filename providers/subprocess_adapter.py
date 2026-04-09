@@ -22,18 +22,21 @@ class SubprocessAdapter:
         self._mock = MockProvider()
 
     def generate(self, system_prompt: str, user_message: str) -> str:
+        result = ""
         # Mock shortcut
         if len(self.command) == 1 and self.command[0] == "mock":
             # Choose actor vs observer vs test by looking for keywords
             combined = (system_prompt or "")
             lower = combined.lower()
             if "actor" in lower or "sliceactor" in lower:
-                return self._mock.generate(system_prompt, user_message)
-            if "observer" in lower or "sliceobserver" in lower:
-                return self._mock.generate(system_prompt, user_message)
-            if "testagent" in lower or "test_agent" in lower:
-                return self._mock.generate(system_prompt, user_message)
-            return json.dumps({"ok": True})
+                result = self._mock.generate(system_prompt, user_message)
+            elif "observer" in lower or "sliceobserver" in lower:
+                result = self._mock.generate(system_prompt, user_message)
+            elif "testagent" in lower or "test_agent" in lower:
+                result = self._mock.generate(system_prompt, user_message)
+            else:
+                result = json.dumps({"ok": True})
+            return result
 
         # Otherwise run the user command
         try:
