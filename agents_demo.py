@@ -26,30 +26,55 @@ class DemoRunner:
         system = p.get("system", "")
         template = p.get("user_template", "")
         try:
-            user = template.format(**{k: (v if v is not None else "") for k, v in kwargs.items()})
+            safe_kwargs = {
+                k: (v if v is not None else "")
+                for k, v in kwargs.items()
+            }
+            user = template.format(**safe_kwargs)
         except Exception:
             user = ""
         return system, user
 
     def run(self, task: str, context: str = "") -> None:
         # Actor
-        actor_system, actor_user = self._format_prompt("slice_actor", task=task, slice_id="demo", context=context, constraints="do not edit tests or docs")
+        actor_system, actor_user = self._format_prompt(
+            "slice_actor",
+            task=task,
+            slice_id="demo",
+            context=context,
+            constraints="do not edit tests or docs",
+        )
         actor_raw = self.provider.generate(actor_system, actor_user)
         try:
             actor_payload = json.loads(actor_raw)
         except Exception:
-            actor_payload = {"analysis": actor_raw, "patch": "", "instructions": "", "confidence": "low"}
+            actor_payload = {
+                "analysis": actor_raw,
+                "patch": "",
+                "instructions": "",
+                "confidence": "low",
+            }
 
         self._emit("actor_proposal", task, actor_payload)
         time.sleep(0.01)
 
         # Observer
-        obs_system, obs_user = self._format_prompt("slice_observer", actor_analysis=actor_payload.get("analysis", ""), patch=actor_payload.get("patch", ""), slice_id="demo")
+        obs_system, obs_user = self._format_prompt(
+            "slice_observer",
+            actor_analysis=actor_payload.get("analysis", ""),
+            patch=actor_payload.get("patch", ""),
+            slice_id="demo",
+        )
         obs_raw = self.provider.generate(obs_system, obs_user)
         try:
             obs_payload = json.loads(obs_raw)
         except Exception:
-            obs_payload = {"verdict": "CAUTION", "findings": [], "risk_level": "medium", "recommended_changes": ""}
+            obs_payload = {
+                "verdict": "CAUTION",
+                "findings": [],
+                "risk_level": "medium",
+                "recommended_changes": "",
+            }
 
         self._emit("observer_audit", task, obs_payload)
         time.sleep(0.01)

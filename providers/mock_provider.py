@@ -40,7 +40,13 @@ class MockProvider:
             return json.dumps(payload)
 
         if "TestAgent" in system_prompt:
-            payload = {"total": 10, "passed": 10, "failed": 0, "failures": [], "metadata": {"model": self.model}}
+            payload = {
+                "total": 10,
+                "passed": 10,
+                "failed": 0,
+                "failures": [],
+                "metadata": {"model": self.model},
+            }
             return json.dumps(payload)
 
         # Default

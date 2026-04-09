@@ -53,7 +53,13 @@ class EnhancedRunner:
         context = slice_def.get("context_excerpt", "")
 
         # Actor
-        actor_system, actor_user = self._format_prompt("slice_actor", task=plan_task, slice_id=slice_id, context=context, constraints="do not edit tests or docs")
+        actor_system, actor_user = self._format_prompt(
+            "slice_actor",
+            task=plan_task,
+            slice_id=slice_id,
+            context=context,
+            constraints="do not edit tests or docs",
+        )
         actor_raw = self.provider.generate(actor_system, actor_user)
         try:
             actor_payload = json.loads(actor_raw)
@@ -61,13 +67,18 @@ class EnhancedRunner:
             if not ok:
                 self._emit('schema_failure', plan_task, slice_id, {'agent': 'actor', 'errors': errors})
                 actor_payload = {
-                    "analysis": actor_payload.get("analysis", "") if isinstance(actor_payload, dict) else "",
+                    "analysis": actor_payload.get("analysis", "")
+                    if isinstance(actor_payload, dict)
+                    else "",
                     "patch": "",
                     "instructions": "",
                     "confidence": "low",
                 }
             else:
-                actor_payload = {k: redact_secrets(v) if isinstance(v, str) else v for k, v in actor_payload.items()}
+                actor_payload = {
+                    k: redact_secrets(v) if isinstance(v, str) else v
+                    for k, v in actor_payload.items()
+                }
         except Exception:
             actor_payload = {
                 "analysis": actor_raw,
@@ -80,18 +91,36 @@ class EnhancedRunner:
 
         # Observer
         if "SliceObserver" in slice_def.get("agents", []):
-            obs_system, obs_user = self._format_prompt("slice_observer", actor_analysis=actor_payload.get("analysis", ""), patch=actor_payload.get("patch", ""), slice_id=slice_id)
+            obs_system, obs_user = self._format_prompt(
+                "slice_observer",
+                actor_analysis=actor_payload.get("analysis", ""),
+                patch=actor_payload.get("patch", ""),
+                slice_id=slice_id,
+            )
             obs_raw = self.provider.generate(obs_system, obs_user)
             try:
                 obs_payload = json.loads(obs_raw)
                 ok, errors = validate_agent_output('observer', obs_payload)
                 if not ok:
                     self._emit('schema_failure', plan_task, slice_id, {'agent': 'observer', 'errors': errors})
-                    obs_payload = {"verdict": "CAUTION", "findings": [], "risk_level": "medium", "recommended_changes": ""}
+                    obs_payload = {
+                        "verdict": "CAUTION",
+                        "findings": [],
+                        "risk_level": "medium",
+                        "recommended_changes": "",
+                    }
                 else:
-                    obs_payload = {k: redact_secrets(v) if isinstance(v, str) else v for k, v in obs_payload.items()}
+                    obs_payload = {
+                        k: redact_secrets(v) if isinstance(v, str) else v
+                        for k, v in obs_payload.items()
+                    }
             except Exception:
-                obs_payload = {"verdict": "CAUTION", "findings": [], "risk_level": "medium", "recommended_changes": ""}
+                obs_payload = {
+                    "verdict": "CAUTION",
+                    "findings": [],
+                    "risk_level": "medium",
+                    "recommended_changes": "",
+                }
             self._emit("observer_audit", plan_task, slice_id, obs_payload)
             time.sleep(0.01)
 
@@ -116,11 +145,24 @@ class EnhancedRunner:
                 ok, errors = validate_agent_output('test', test_payload)
                 if not ok:
                     self._emit('schema_failure', plan_task, slice_id, {'agent': 'test', 'errors': errors})
-                    test_payload = {"total": 0, "passed": 0, "failed": 0, "failures": []}
+                    test_payload = {
+                    "total": 0,
+                    "passed": 0,
+                    "failed": 0,
+                    "failures": [],
+                }
                 else:
-                    test_payload = {k: redact_secrets(v) if isinstance(v, str) else v for k, v in test_payload.items()}
+                    test_payload = {
+                        k: redact_secrets(v) if isinstance(v, str) else v
+                        for k, v in test_payload.items()
+                    }
             except Exception:
-                test_payload = {"total": 0, "passed": 0, "failed": 0, "failures": []}
+                test_payload = {
+                    "total": 0,
+                    "passed": 0,
+                    "failed": 0,
+                    "failures": [],
+                }
             self._emit("test_results", plan_task, slice_id, test_payload)
             time.sleep(0.01)
 
@@ -151,5 +193,10 @@ class EnhancedRunner:
                 except Exception as e:
                     # emit error event
                     s = futures[fut]
-                    self._emit("slice_error", task, s.get("slice_id"), {"error": str(e)})
+                    self._emit(
+                        "slice_error",
+                        task,
+                        s.get("slice_id"),
+                        {"error": str(e)},
+                    )
         return results
