@@ -173,7 +173,7 @@ class EnhancedRunner:
             git_payload = {
                 "branch": f"lintley/{slice_id}",
                 "commands": [f"git checkout -b lintley/{slice_id}", "git apply patch", "pytest -q"],
-                "rollback": [f"git reset --hard HEAD~1"],
+                "rollback": ["git reset --hard HEAD~1"],
             }
             self._emit("git_steps", plan_task, slice_id, git_payload)
             time.sleep(0.01)
