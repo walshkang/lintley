@@ -107,7 +107,7 @@ class ProviderClient:
         elif api_key.startswith("sk-"):
             return "openai"
         # Google keys are usually long alphanumeric or have AIza prefix
-        elif api_key.startswith("AIza") or len(api_key) > 100:
+        elif api_key.startswith("AIza") or len(api_key) > GOOGLE_KEY_LENGTH:
             return "google"
         else:
             return None
@@ -150,7 +150,10 @@ class ProviderClient:
                 return ["gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
 
 
-def setup_provider() -> ProviderClient:  # noqa: C901
+GOOGLE_KEY_LENGTH = 100
+
+
+def setup_provider() -> ProviderClient:  # noqa: C901, PLR0912, PLR0915
     """Configure provider from environment, .env.local, or interactively.
 
     Returns a ready ProviderClient instance when possible.

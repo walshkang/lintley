@@ -21,6 +21,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import TypedDict, Optional
 
+# Configuration constants
+GOOGLE_KEY_LENGTH = 100
+MIN_ARG_COUNT = 2
+
 # State directory
 STATE_DIR = Path(".hitl_state")
 CONFIG_FILE = STATE_DIR / "config.json"
@@ -72,7 +76,7 @@ def save_config(config: dict):
         json.dump(config, f, indent=2)
 
 
-def setup_provider():
+def setup_provider():  # noqa: C901, PLR0912, PLR0915
     """Configure provider from environment or interactively.
 
     Priority (non-interactive):
@@ -117,7 +121,7 @@ def setup_provider():
             provider = "anthropic"
         elif api_key.startswith("sk-"):
             provider = "openai"
-        elif api_key.startswith("AIza") or len(api_key) > 100:
+        elif api_key.startswith("AIza") or len(api_key) > GOOGLE_KEY_LENGTH:
             provider = "google"
 
     # If we have required info, save config non-interactively
@@ -144,7 +148,7 @@ def setup_provider():
         provider = "anthropic"
     elif api_key.startswith("sk-"):
         provider = "openai"
-    elif api_key.startswith("AIza") or len(api_key) > 100:
+    elif api_key.startswith("AIza") or len(api_key) > GOOGLE_KEY_LENGTH:
         provider = "google"
     else:
         print("⚠️  Could not auto-detect. Which provider?")
@@ -359,7 +363,7 @@ def run_workflow_cmd(task_id: str):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    if len(sys.argv) < MIN_ARG_COUNT:
         print(__doc__)
         sys.exit(0)
 
@@ -367,15 +371,15 @@ if __name__ == "__main__":
 
     if cmd == "setup":
         setup_provider()
-    elif cmd == "submit" and len(sys.argv) > 2:
+    elif cmd == "submit" and len(sys.argv) > MIN_ARG_COUNT:
         submit_cmd(sys.argv[2])
     elif cmd == "status":
         status_cmd()
-    elif cmd == "execute" and len(sys.argv) > 2:
+    elif cmd == "execute" and len(sys.argv) > MIN_ARG_COUNT:
         run_workflow_cmd(sys.argv[2])
-    elif cmd == "approve" and len(sys.argv) > 2:
+    elif cmd == "approve" and len(sys.argv) > MIN_ARG_COUNT:
         approve_cmd(sys.argv[2], "a")
-    elif cmd == "reject" and len(sys.argv) > 2:
+    elif cmd == "reject" and len(sys.argv) > MIN_ARG_COUNT:
         approve_cmd(sys.argv[2], "r")
     elif cmd == "dashboard":
         dashboard_cmd()
