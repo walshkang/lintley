@@ -55,6 +55,25 @@ python3 hitl_multitask.py execute <task_id> --provider=subprocess
 
 This uses the `mock` subprocess shortcut so you can exercise the full Actor→Observer→HITL cycle without external LLMs.
 
+Reject-flow test (local fake LLM)
+
+If you want to test the Observer rejecting a task, use the provided fake LLM observer script that emits a high-risk verdict.
+
+```bash
+# Configure the subprocess adapter to use the fake observer
+mkdir -p .hitl_state
+printf '{"provider":"subprocess","command":["python3","scripts/fake_llm_observer.py"]}' > .hitl_state/config.json
+
+# Submit and execute the sample task
+python3 hitl_multitask.py submit docs/examples/sample_task.json
+python3 hitl_multitask.py execute <task_id> --provider=subprocess
+
+# See the observer return CAUTION/high risk; then reject
+python3 hitl_multitask.py reject <task_id>
+```
+
+A copy of the script is also available as `docs/examples/fake_llm_observer.py` for reference.
+
 ### 2. Submit Tasks
 
 Create a task definition (JSON):
