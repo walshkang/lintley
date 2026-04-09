@@ -1,9 +1,9 @@
+# fmt: off
 """Local adapter wrapper used for local, deterministic runs in CI/tests.
 
 This is a thin shim around the existing MockProvider to provide a stable
 "adapter" surface for later real provider implementations.
 """
-# fmt: off
 from providers.mock_provider import MockProvider
 
 
