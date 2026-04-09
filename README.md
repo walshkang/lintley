@@ -394,4 +394,4 @@ MIT
 For issues or questions, open a GitHub issue or contact the maintainer.
 
 ## Safety
-See ROADMAP.md for prompt-injection mitigations and safety defaults.
+Lintley is local-first and includes basic prompt-injection mitigations by default: inputs are lightly sanitized (utils.safety.sanitize_user_input) and outputs are redacted (utils.safety.redact_secrets). Repository contents are not sent to third-party providers without explicit opt-in. See ROADMAP.md for advanced mitigations (Jinja2 templating, schema validation, review workflows) and timelines.

@@ -59,3 +59,11 @@ Appendix
 
 - Proposed file layout: docs/, examples/, providers/, agents/, hitl_multitask.py, actor_observer_hitl.py
 - Contribution checklist: run tests, run formatters (black/ruff), include changelog entry
+
+
+Security Roadmap
+
+- Prompt-injection mitigations: sanitize inputs (utils.safety.sanitize_user_input), redact outputs (utils.safety.redact_secrets), and validate agent outputs with strict schemas.
+- Template safety: migrate to Jinja2 with autoescaping for prompt templates.
+- Repository privacy: require explicit opt-in before sending repo files to remote providers; provide local-only analysis tools.
+- Audit: community security review and CI checks for accidental secret leaks.
