@@ -1,5 +1,4 @@
 import json
-import shlex
 import subprocess
 from typing import List, Optional
 
@@ -27,11 +26,12 @@ class SubprocessAdapter:
         if len(self.command) == 1 and self.command[0] == "mock":
             # Choose actor vs observer vs test by looking for keywords
             combined = (system_prompt or "")
-            if "Actor" in combined or "SliceActor" in combined or "actor" in combined.lower():
+            lower = combined.lower()
+            if "actor" in lower or "sliceactor" in lower:
                 return self._mock.generate(system_prompt, user_message)
-            if "Observer" in combined or "SliceObserver" in combined or "observer" in combined.lower():
+            if "observer" in lower or "sliceobserver" in lower:
                 return self._mock.generate(system_prompt, user_message)
-            if "TestAgent" in combined or "test_agent" in combined.lower():
+            if "testagent" in lower or "test_agent" in lower:
                 return self._mock.generate(system_prompt, user_message)
             return json.dumps({"ok": True})
 
