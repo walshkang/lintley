@@ -1,6 +1,5 @@
 import json
 import time
-from typing import Optional
 
 
 class MockProvider:
@@ -11,7 +10,12 @@ class MockProvider:
     def __init__(self, actor_patch=None):
         # actor_patch: optional diff string to return for Actor outputs
         self.actor_patch = actor_patch or (
-            "diff --git a/foo.txt b/foo.txt\n--- a/foo.txt\n+++ b/foo.txt\n@@ -1 +1 @@\n-old\n+new\n"
+            "diff --git a/foo.txt b/foo.txt\n"
+            "--- a/foo.txt\n"
+            "+++ b/foo.txt\n"
+            "@@ -1 +1 @@\n"
+            "-old\n"
+            "+new\n"
         )
         self.provider = "mock"
         self.model = "gpt-5-mini-mock"
