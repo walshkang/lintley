@@ -1,6 +1,10 @@
 import re
 import hashlib
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
+
+# Tunable constants to avoid magic-number linter complaints
+MAX_LINE_LEN = 1000
+MIN_SECRET_LEN = 5
 
 INJECTION_PATTERNS = [
     r"ignore (previous )?instructions",
@@ -32,7 +36,6 @@ def sanitize_user_input(text: str, max_lines: int = 200, max_chars: int = 3000) 
     """
     if not isinstance(text, str):
         return text
-    orig = text
     t = text
     # remove explicit injection phrases
     for pat in INJECTION_PATTERNS:
@@ -44,15 +47,15 @@ def sanitize_user_input(text: str, max_lines: int = 200, max_chars: int = 3000) 
         if not s:
             lines.append("")
             continue
-        if s.startswith("$") or s.startswith("!") or s.startswith("//") or s.startswith("#"):
+        if s.startswith(("$", "!", "//", "#")):
             # drop obvious commands
             continue
         # drop lines that appear to be 'run:' directives
         if re.match(r"^run[: ].*", s, flags=re.IGNORECASE):
             continue
         # drop lines that are excessive length
-        if len(s) > 1000:
-            s = s[:1000] + "..."
+        if len(s) > MAX_LINE_LEN:
+            s = s[:MAX_LINE_LEN] + "..."
         lines.append(s)
         if len(lines) >= max_lines:
             break
@@ -69,23 +72,20 @@ def redact_secrets(text: Any) -> Any:
     if not isinstance(text, str):
         return text
     t = text
-    replaced = False
     for pat in SECRET_PATTERNS:
         found = re.findall(pat, t)
         for m in found:
             if isinstance(m, tuple):
                 m = m[0]
-            if len(m) < 5:
+            if len(m) < MIN_SECRET_LEN:
                 continue
             h = _sha256(m)
             t = t.replace(m, f"[REDACTED:{h[:8]}]")
-            replaced = True
     # redact long dot-separated tokens (JWT-like)
     jwt_like = re.findall(r"[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+", t)
     for j in jwt_like:
         h = _sha256(j)
         t = t.replace(j, f"[REDACTED:{h[:8]}]")
-        replaced = True
     return t
 
 

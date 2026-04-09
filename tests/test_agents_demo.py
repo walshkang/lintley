@@ -27,10 +27,10 @@ def test_demo_runner_prints_json_lines(capsys):
     runner.run("Enable feature X")
 
     captured = capsys.readouterr()
-    lines = [l for l in captured.out.splitlines() if l.strip()]
+    lines = [line for line in captured.out.splitlines() if line.strip()]
     assert len(lines) == 3
 
-    events = [json.loads(l) for l in lines]
+    events = [json.loads(line) for line in lines]
     assert events[0]["event"] == "actor_proposal"
     assert "analysis" in events[0]["payload"]
     assert events[1]["event"] == "observer_audit"

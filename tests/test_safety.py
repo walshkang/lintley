@@ -15,6 +15,9 @@ def test_redact_secrets_replaces_api_keys():
 
 
 def test_validate_agent_output_actor_ok():
-    ok, errs = validate_agent_output('actor', {'analysis':'x','patch':'','instructions':'','confidence':'high'})
+    ok, errs = validate_agent_output(
+        'actor',
+        {'analysis': 'x', 'patch': '', 'instructions': '', 'confidence': 'high'},
+    )
     assert ok
     assert errs == []
