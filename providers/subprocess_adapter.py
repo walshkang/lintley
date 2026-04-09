@@ -1,9 +1,9 @@
-# fmt: off
 import json
 import subprocess
 from typing import List, Optional
 
 from providers.mock_provider import MockProvider
+
 
 class SubprocessAdapter:
     """Adapter that calls a subprocess for generation.
@@ -26,7 +26,7 @@ class SubprocessAdapter:
         is_mock = len(self.command) == 1 and self.command[0] == "mock"
         if is_mock:
             # Choose actor vs observer vs test by looking for keywords
-            combined = (system_prompt or "")
+            combined = system_prompt or ""
             lower = combined.lower()
             if "actor" in lower or "sliceactor" in lower:
                 result = self._mock.generate(system_prompt, user_message)

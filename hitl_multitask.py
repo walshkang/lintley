@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# fmt: off
 """
 Generic Multi-Task Actor-Observer-HITL System
 
@@ -388,9 +387,7 @@ def _run_actor(adapter, prompts, vars):
         if not ok:
             actor_payload.setdefault("confidence", "low")
             analysis = str(actor_payload.get("analysis", ""))
-            actor_payload["analysis"] = (
-                f"{analysis} (validation-issues: {','.join(errors)})"
-            )
+            actor_payload["analysis"] = f"{analysis} (validation-issues: {','.join(errors)})"
     except Exception as e:
         actor_payload = {
             "analysis": str(e),
@@ -518,5 +515,3 @@ if __name__ == "__main__":
         dashboard_cmd()
     else:
         print(__doc__)
-
-# fmt: on
