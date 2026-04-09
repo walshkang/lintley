@@ -332,7 +332,7 @@ def approve_cmd(task_id: str, decision: str = "a"):
     save_task(task)
 
 
-def run_workflow_cmd(task_id: str):
+def run_workflow_cmd(task_id: str):  # noqa: C901, PLR0915
     """Run Actor → Observer → HITL for a task.
 
     Loads prompt templates from prompts/, renders them safely, runs a local
@@ -388,7 +388,10 @@ def run_workflow_cmd(task_id: str):
         ok, errors = validate_agent_output("actor", actor_payload)
         if not ok:
             actor_payload.setdefault("confidence", "low")
-            actor_payload.setdefault("analysis", str(actor_payload.get("analysis", "")) + " (validation-issues: " + ",".join(errors) + ")")
+            analysis = str(actor_payload.get("analysis", ""))
+            actor_payload["analysis"] = (
+                f"{analysis} (validation-issues: {','.join(errors)})"
+            )
     except Exception as e:
         actor_payload = {"analysis": str(e), "patch": "", "instructions": "", "confidence": "low"}
 
