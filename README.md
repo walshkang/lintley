@@ -38,6 +38,23 @@ python3 hitl_multitask.py setup
 
 You'll be prompted for an API key. It auto-detects the provider (Anthropic, Google, OpenAI) and saves config to `.hitl_state/config.json`.
 
+Quick examples for testing locally (no external API keys required):
+
+- Sample config (subprocess mock): `docs/examples/config_example.json`
+- Sample task definition: `docs/examples/sample_task.json`
+
+To try the mock subprocess flow:
+
+```bash
+mkdir -p .hitl_state
+cp docs/examples/config_example.json .hitl_state/config.json
+python3 hitl_multitask.py submit docs/examples/sample_task.json
+# note the returned task id, then:
+python3 hitl_multitask.py execute <task_id> --provider=subprocess
+```
+
+This uses the `mock` subprocess shortcut so you can exercise the full Actor→Observer→HITL cycle without external LLMs.
+
 ### 2. Submit Tasks
 
 Create a task definition (JSON):

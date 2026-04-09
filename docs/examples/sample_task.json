@@ -1,0 +1,6 @@
+{
+  "title": "Layout rebalance",
+  "goal": "Adjust flex ratios to achieve 60/40 split",
+  "context": "Current layout: panel 380px, target: flex-[3]/flex-[2]",
+  "model_hint": "balanced"
+}
