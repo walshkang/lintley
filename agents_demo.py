@@ -9,9 +9,9 @@ import json
 import time
 from typing import Any, Dict
 
-from prompts.loader import load_prompts
+from prompts.loader import load_prompts, render_prompt
 
-PROMPTS = load_prompts()
+PROMPTS = load_prompts("slice_a")
 
 
 class DemoRunner:
@@ -23,12 +23,18 @@ class DemoRunner:
         print(json.dumps(envelope, ensure_ascii=False))
 
     def _format_prompt(self, key: str, **kwargs):
-        p = PROMPTS.get(key, {})
-        system = p.get("system", "")
-        template = p.get("user_template", "")
+        # Map legacy keys to new prompt structure and render safely
+        if key == "slice_actor":
+            system = PROMPTS.get("actor_system", "")
+            template = PROMPTS.get("actor_user", "")
+        elif key == "slice_observer":
+            system = PROMPTS.get("observer_system", "")
+            template = PROMPTS.get("observer_user", "")
+        else:
+            system = ""
+            template = ""
         try:
-            safe_kwargs = {k: (v if v is not None else "") for k, v in kwargs.items()}
-            user = template.format(**safe_kwargs)
+            user = render_prompt(template, kwargs)
         except Exception:
             user = ""
         return system, user

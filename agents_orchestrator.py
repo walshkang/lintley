@@ -6,10 +6,10 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict
 
-from prompts.loader import load_prompts
+from prompts.loader import load_prompts, render_prompt
 from utils.safety import sanitize_user_input, redact_secrets, validate_agent_output
 
-PROMPTS = load_prompts()
+PROMPTS = load_prompts("slice_a")
 
 
 class EnhancedRunner:
@@ -31,19 +31,26 @@ class EnhancedRunner:
         print(json.dumps(envelope, ensure_ascii=False))
 
     def _format_prompt(self, key: str, **kwargs) -> (str, str):
-        p = PROMPTS.get(key, {})
-        system = p.get("system", "")
-        template = p.get("user_template", "")
-        # sanitize and escape values to avoid format injection
-        safe_kwargs = {}
-        for k, v in kwargs.items():
-            val = "" if v is None else str(v)
-            val = sanitize_user_input(val)
-            # escape braces so .format can't be abused by user values
-            val = val.replace("{", "{{").replace("}", "}}")
-            safe_kwargs[k] = val
+        # Map legacy keys to new prompt structure and render via render_prompt
+        if key == "slice_actor":
+            system = PROMPTS.get("actor_system", "")
+            template = PROMPTS.get("actor_user", "")
+        elif key == "slice_observer":
+            system = PROMPTS.get("observer_system", "")
+            template = PROMPTS.get("observer_user", "")
+        elif key == "test_agent":
+            system = PROMPTS.get("test_system", "")
+            template = PROMPTS.get("test_user", "")
+        else:
+            system = ""
+            template = ""
+
+        # sanitize values to reduce injection surface
+        safe_kwargs = {k: sanitize_user_input("" if v is None else str(v)) for k, v in kwargs.items()}
+        # escape braces for backwards-compatible formatting safety when not using Jinja
+        safe_kwargs = {k: v.replace("{", "{{").replace("}", "}}") for k, v in safe_kwargs.items()}
         try:
-            user = template.format(**safe_kwargs)
+            user = render_prompt(template, safe_kwargs)
         except Exception:
             user = ""
         return system, user
