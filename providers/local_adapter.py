@@ -5,6 +5,7 @@ This is a thin shim around the existing MockProvider to provide a stable
 """
 
 from providers.mock_provider import MockProvider
+from utils.safety import sanitize_user_input, redact_secrets
 
 
 class LocalAdapter:
@@ -25,7 +26,17 @@ class LocalAdapter:
     def generate(self, system_prompt: str, user_message: str) -> str:
         """Generate a response string for the given prompts.
 
+        Performs lightweight sanitization of inputs and redaction of outputs to
+        reduce prompt-injection / secret-leakage surface for local providers.
         Returns a JSON string (mock) to match existing providers' contract.
         """
-        return self._mock.generate(system_prompt, user_message)
+        sys_p = sanitize_user_input(system_prompt)
+        user_p = sanitize_user_input(user_message)
+        resp = self._mock.generate(sys_p, user_p)
+        try:
+            resp = redact_secrets(resp)
+        except Exception:
+            # be permissive: if redaction fails, return original response
+            return resp
+        return resp
 
