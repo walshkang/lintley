@@ -332,34 +332,11 @@ def approve_cmd(task_id: str, decision: str = "a"):
     save_task(task)
 
 
-def run_workflow_cmd(task_id: str):  # noqa: C901, PLR0915
-    """Run Actor → Observer → HITL for a task.
-
-    Loads prompt templates from prompts/, renders them safely, runs a local
-    adapter (LocalAdapter) for deterministic behavior, validates outputs and
-    saves them into task state.
-    """
-    from prompts.loader import load_prompts, render_prompt
+def _prepare_prompts_and_adapter(task: dict, config: dict):
+    """Load prompts, render vars, and create a LocalAdapter instance."""
+    from prompts.loader import load_prompts
     from providers.local_adapter import LocalAdapter
-    from utils.safety import redact_secrets, validate_agent_output
 
-    config = load_config()
-    if not config:
-        print("❌ Not configured. Run: python3 hitl_multitask.py setup")
-        sys.exit(1)
-
-    task = load_task(task_id)
-    if not task:
-        print(f"❌ Task not found: {task_id}")
-        sys.exit(1)
-
-    print("\n" + "=" * 80)
-    print(f"🤖 WORKFLOW: {task['title']}")
-    print("=" * 80)
-    print(f"\nGoal: {task['goal']}")
-    print(f"Context: {task['context'][:100]}...")
-
-    # determine slice id (default to slice_a)
     slice_id = task.get("slice_id") or "slice_a"
     try:
         prompts = load_prompts(slice_id)
@@ -367,13 +344,18 @@ def run_workflow_cmd(task_id: str):  # noqa: C901, PLR0915
         prompts = load_prompts("slice_a")
 
     vars = {"goal": task["goal"], "context": task["context"], "slice_id": slice_id}
-
     adapter = LocalAdapter(model=config.get("model") or None)
+    return prompts, vars, adapter
 
-    # Run Actor
-    print("\n⏳ Running Actor Agent...")
+
+def _run_actor(adapter, prompts, vars):
+    """Run the Actor agent via adapter and return a structured payload."""
+    from prompts.loader import render_prompt
+    from utils.safety import validate_agent_output
+
     actor_system = render_prompt(prompts.get("actor_system", ""), vars)
     actor_user = render_prompt(prompts.get("actor_user", ""), vars)
+
     try:
         raw_actor = adapter.generate(actor_system, actor_user)
         try:
@@ -393,20 +375,25 @@ def run_workflow_cmd(task_id: str):  # noqa: C901, PLR0915
                 f"{analysis} (validation-issues: {','.join(errors)})"
             )
     except Exception as e:
-        actor_payload = {"analysis": str(e), "patch": "", "instructions": "", "confidence": "low"}
+        actor_payload = {
+            "analysis": str(e),
+            "patch": "",
+            "instructions": "",
+            "confidence": "low",
+        }
+    return actor_payload
 
-    task["actor_work"] = actor_payload
-    print("Actor result:")
-    print(json.dumps(redact_secrets(actor_payload), indent=2))
 
-    # Run Observer
-    print("\n⏳ Running Observer Agent...")
-    # include actor output in observer prompt for context
+def _run_observer(adapter, prompts, vars, actor_payload):
+    """Run the Observer agent and return its payload."""
+    from prompts.loader import render_prompt
+    from utils.safety import validate_agent_output
+
     obs_vars = dict(vars)
     obs_vars["actor_output"] = json.dumps(actor_payload)
+
     observer_system = render_prompt(prompts.get("observer_system", ""), obs_vars)
     observer_user = render_prompt(prompts.get("observer_user", ""), obs_vars)
-    # append actor output if template doesn't include it
     if "actor_output" not in observer_user:
         observer_user = observer_user + "\n\nActorOutput: " + json.dumps(actor_payload)
 
@@ -426,8 +413,49 @@ def run_workflow_cmd(task_id: str):  # noqa: C901, PLR0915
             obs_payload.setdefault("verdict", "CAUTION")
             obs_payload.setdefault("findings", []).append("validation-issues: " + ",".join(errs2))
     except Exception as e:
-        obs_payload = {"verdict": "CAUTION", "findings": [str(e)], "risk_level": "medium", "recommended_changes": ""}
+        obs_payload = {
+            "verdict": "CAUTION",
+            "findings": [str(e)],
+            "risk_level": "medium",
+            "recommended_changes": "",
+        }
+    return obs_payload
 
+
+def run_workflow_cmd(task_id: str):
+    """Run Actor → Observer → HITL for a task.
+
+    This is a thin coordinator that delegates the heavy lifting to helpers so
+    the function stays concise and easier to test.
+    """
+    from utils.safety import redact_secrets
+
+    config = load_config()
+    if not config:
+        print("❌ Not configured. Run: python3 hitl_multitask.py setup")
+        sys.exit(1)
+
+    task = load_task(task_id)
+    if not task:
+        print(f"❌ Task not found: {task_id}")
+        sys.exit(1)
+
+    print("\n" + "=" * 80)
+    print(f"🤖 WORKFLOW: {task['title']}")
+    print("=" * 80)
+    print(f"\nGoal: {task['goal']}")
+    print(f"Context: {task['context'][:100]}...")
+
+    prompts, vars, adapter = _prepare_prompts_and_adapter(task, config)
+
+    print("\n⏳ Running Actor Agent...")
+    actor_payload = _run_actor(adapter, prompts, vars)
+    task["actor_work"] = actor_payload
+    print("Actor result:")
+    print(json.dumps(redact_secrets(actor_payload), indent=2))
+
+    print("\n⏳ Running Observer Agent...")
+    obs_payload = _run_observer(adapter, prompts, vars, actor_payload)
     task["observer_review"] = obs_payload
     task["risk_level"] = obs_payload.get("risk_level", "medium")
     task["status"] = "pending_approval"
