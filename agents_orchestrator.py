@@ -4,7 +4,7 @@
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from prompts.loader import load_prompts
 from utils.safety import sanitize_user_input, redact_secrets, validate_agent_output
@@ -22,7 +22,11 @@ class EnhancedRunner:
             "task": task,
             "slice_id": slice_id,
             "payload": payload,
-            "meta": {"agent": event, "model": getattr(self.provider, "model", "mock"), "ts": time.time()},
+            "meta": {
+                "agent": event,
+                "model": getattr(self.provider, "model", "mock"),
+                "ts": time.time(),
+            },
         }
         print(json.dumps(envelope, ensure_ascii=False))
 
@@ -65,7 +69,12 @@ class EnhancedRunner:
             actor_payload = json.loads(actor_raw)
             ok, errors = validate_agent_output('actor', actor_payload)
             if not ok:
-                self._emit('schema_failure', plan_task, slice_id, {'agent': 'actor', 'errors': errors})
+                self._emit(
+                    'schema_failure',
+                    plan_task,
+                    slice_id,
+                    {"agent": "actor", "errors": errors},
+                )
                 actor_payload = {
                     "analysis": actor_payload.get("analysis", "")
                     if isinstance(actor_payload, dict)
@@ -102,7 +111,12 @@ class EnhancedRunner:
                 obs_payload = json.loads(obs_raw)
                 ok, errors = validate_agent_output('observer', obs_payload)
                 if not ok:
-                    self._emit('schema_failure', plan_task, slice_id, {'agent': 'observer', 'errors': errors})
+                    self._emit(
+                        'schema_failure',
+                        plan_task,
+                        slice_id,
+                        {"agent": "observer", "errors": errors},
+                    )
                     obs_payload = {
                         "verdict": "CAUTION",
                         "findings": [],
@@ -132,7 +146,11 @@ class EnhancedRunner:
             errors = []
             if not applies:
                 errors.append("no-patch-provided")
-            patch_payload = {"applies": applies, "errors": errors, "normalized_patch": normalized}
+            patch_payload = {
+                "applies": applies,
+                "errors": errors,
+                "normalized_patch": normalized,
+            }
             self._emit("patch_ready", plan_task, slice_id, patch_payload)
             time.sleep(0.01)
 
@@ -149,13 +167,18 @@ class EnhancedRunner:
                 test_payload = json.loads(test_raw)
                 ok, errors = validate_agent_output('test', test_payload)
                 if not ok:
-                    self._emit('schema_failure', plan_task, slice_id, {'agent': 'test', 'errors': errors})
+                    self._emit(
+                        'schema_failure',
+                        plan_task,
+                        slice_id,
+                        {"agent": "test", "errors": errors},
+                    )
                     test_payload = {
-                    "total": 0,
-                    "passed": 0,
-                    "failed": 0,
-                    "failures": [],
-                }
+                        "total": 0,
+                        "passed": 0,
+                        "failed": 0,
+                        "failures": [],
+                    }
                 else:
                     test_payload = {
                         k: redact_secrets(v) if isinstance(v, str) else v
@@ -190,7 +213,12 @@ class EnhancedRunner:
                 ],
                 "rollback": ["git reset --hard HEAD~1"],
             }
-            self._emit("git_steps", plan_task, slice_id, git_payload)
+            self._emit(
+                "git_steps",
+                plan_task,
+                slice_id,
+                git_payload,
+            )
             time.sleep(0.01)
 
         return True
