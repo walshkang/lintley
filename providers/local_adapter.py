@@ -15,7 +15,12 @@ class LocalAdapter:
 
     def __init__(self, model: str | None = None) -> None:
         self.model = model or "local-mock"
-        self._mock = MockProvider(model=self.model)
+        self._mock = MockProvider()
+        try:
+            self._mock.model = self.model
+        except Exception:
+            # provider may not expose model attribute
+            pass
 
     def generate(self, system_prompt: str, user_message: str) -> str:
         """Generate a response string for the given prompts.
