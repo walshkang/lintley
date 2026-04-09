@@ -1,0 +1,4 @@
+{
+  "system": "You are TestAgent. Objective: run or simulate running tests affected by the slice and return JSON: { total, passed, failed, failures, metadata }.",
+  "user_template": "{\"slice_id\": \"{slice_id}\", \"test_command\": \"{test_command}\", \"timeout\": {timeout} }"
+}

@@ -147,11 +147,56 @@ class ProviderClient:
 
 
 def setup_provider() -> ProviderClient:
-    """Interactive setup: ask for API key, detect provider, pick model."""
+    """Configure provider from environment, .env.local, or interactively.
+
+    Returns a ready ProviderClient instance when possible.
+    """
     print("\n" + "=" * 80)
     print("🔧 PROVIDER SETUP")
     print("=" * 80)
 
+    # Try environment first
+    detected_provider = os.environ.get("HITL_PROVIDER")
+    api_key = os.environ.get("HITL_API_KEY")
+    selected_model = os.environ.get("HITL_MODEL")
+
+    # Fallback to .env.local
+    env_file = Path(".env.local")
+    if env_file.exists():
+        try:
+            with open(env_file) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k == "HITL_PROVIDER" and not detected_provider:
+                        detected_provider = v
+                    elif k == "HITL_API_KEY" and not api_key:
+                        api_key = v
+                    elif k == "HITL_MODEL" and not selected_model:
+                        selected_model = v
+        except Exception:
+            pass
+
+    # If we have an API key but no provider, try auto-detection
+    if api_key and not detected_provider:
+        detected_provider = ProviderClient.detect_provider(api_key)
+
+    if detected_provider and api_key:
+        print(f"✅ Using provider from env/config: {detected_provider.upper()}")
+        print("⏳ Initializing provider...")
+        try:
+            client = ProviderClient(detected_provider, api_key, selected_model or "")
+            print("✅ Provider initialized successfully!\n")
+            return client
+        except Exception as e:
+            print(f"❌ Failed to initialize provider: {e}")
+            # Fall through to interactive prompt
+
+    # Interactive fallback (unchanged behavior)
     # Get API key
     print("\nEnter your API key (supports: Anthropic, Google Generative AI, OpenAI)")
     print("(Your key will NOT be saved or logged)")

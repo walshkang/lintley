@@ -1,4 +1,15 @@
-# Lintley — Multi-Agent HITL Coordination
+# [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE) [![CI](https://github.com/walsh.kang/lintley/actions/workflows/ci.yml/badge.svg)](https://github.com/walsh.kang/lintley/actions/workflows/ci.yml)
+
+Lintley — Multi-Agent HITL Coordination
+
+Table of Contents
+- Quick Start
+- Goals & Vision
+- For the vibe coder
+- Contributing
+- Docs
+- Testing
+
 
 A generic, multi-provider framework for running parallel AI workflows with human-in-the-loop (HITL) checkpoints. Coordinates multiple agents (Actor, Observer) across tasks, tracks approval state, and integrates with any LLM provider (Anthropic, Google, OpenAI).
 
@@ -368,12 +379,7 @@ Edit the `system_prompt` strings in `actor_agent()` and `observer_agent()` to ch
 
 ## Contributing
 
-This is a generic tool. Contributions welcome:
-- New providers (Cohere, Mistral, etc.)
-- Better state persistence (database instead of JSON)
-- Web dashboard (instead of CLI)
-- Task scheduling/retry logic
-- Cost tracking per task
+Contributions welcome — see CONTRIBUTING.md and CODE_OF_CONDUCT.md for guidelines and expectations. To propose features or fixes, open an issue or submit a PR. Small, focused PRs with tests are easiest to review.
 
 ---
 
@@ -386,3 +392,6 @@ MIT
 ## Feedback
 
 For issues or questions, open a GitHub issue or contact the maintainer.
+
+## Safety
+See ROADMAP.md for prompt-injection mitigations and safety defaults.

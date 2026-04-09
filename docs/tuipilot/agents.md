@@ -2,7 +2,7 @@ Agents
 
 Purpose
 
-Define background agents and their responsibilities. Agents are small, single-purpose asyncio tasks or subprocesses that perform long-running or blocking work so the TUI remains responsive.
+Define background agents and their responsibilities. Agents are small, single-purpose asyncio tasks or subprocesses that perform long-running or blocking work so the TUI remains responsive. This document clarifies recommended interfaces, testing expectations, and privacy constraints so contributors can implement reusable, provider-agnostic agents.
 
 Suggested agents
 

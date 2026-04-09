@@ -74,11 +74,67 @@ def save_config(config: dict):
 
 
 def setup_provider():
-    """Interactive setup: ask for API key, detect provider, pick model."""
+    """Configure provider from environment or interactively.
+
+    Priority (non-interactive):
+      1. Environment variables: HITL_PROVIDER, HITL_API_KEY, HITL_MODEL
+      2. .env.local file with the same keys
+    Falls back to the original interactive prompt if values are missing.
+    """
     print("\n" + "=" * 80)
     print("🔧 PROVIDER SETUP")
     print("=" * 80)
 
+    # Try environment variables first
+    provider = os.environ.get("HITL_PROVIDER")
+    api_key = os.environ.get("HITL_API_KEY")
+    selected_model = os.environ.get("HITL_MODEL")
+
+    # If any missing, try .env.local
+    env_file = Path(".env.local")
+    if env_file.exists():
+        try:
+            with open(env_file) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k == "HITL_PROVIDER" and not provider:
+                        provider = v
+                    elif k == "HITL_API_KEY" and not api_key:
+                        api_key = v
+                    elif k == "HITL_MODEL" and not selected_model:
+                        selected_model = v
+        except Exception:
+            pass
+
+    # If we have an API key, try to detect provider if not provided
+    if api_key and not provider:
+        # best-effort detection
+        if api_key.startswith("sk-ant-"):
+            provider = "anthropic"
+        elif api_key.startswith("sk-"):
+            provider = "openai"
+        elif api_key.startswith("AIza") or len(api_key) > 100:
+            provider = "google"
+
+    # If we have required info, save config non-interactively
+    if api_key and provider:
+        print(f"✅ Using provider from env/config: {provider.upper()}")
+        config = {
+            "provider": provider,
+            "api_key": api_key,
+            "model": selected_model or "",
+            "saved_at": datetime.now().isoformat(),
+        }
+        save_config(config)
+        print(f"✅ Config saved to {CONFIG_FILE}")
+        return
+
+    # Fallback: original interactive flow
     api_key = input("\n🔑 API Key (Anthropic/Google/OpenAI): ").strip()
     if not api_key:
         print("❌ No API key provided.")
