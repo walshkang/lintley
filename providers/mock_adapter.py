@@ -1,5 +1,4 @@
 import asyncio
-import asyncio
 from typing import AsyncIterator, Dict, List, Optional
 
 
@@ -33,14 +32,6 @@ class MockAdapter:
             if self.delay:
                 await asyncio.sleep(self.delay)
             yield token
-
-    async def cancel(self, stream_id: str) -> bool:
-        """Request cancellation of an in-flight stream. Returns True if cancellation requested."""
-        self._cancelled = True
-        return True
-
-    def status(self) -> Dict:
-        return {"state": "idle", "stream_id": None, "progress": None}
 
     async def cancel(self, stream_id: str) -> bool:
         """Request cancellation of an in-flight stream. Returns True if cancellation requested."""

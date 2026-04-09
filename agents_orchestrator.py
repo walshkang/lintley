@@ -138,7 +138,12 @@ class EnhancedRunner:
 
         # TestAgent
         if "TestAgent" in slice_def.get("agents", []):
-            test_system, test_user = self._format_prompt("test_agent", slice_id=slice_id, test_command="pytest -q", timeout=120)
+            test_system, test_user = self._format_prompt(
+                "test_agent",
+                slice_id=slice_id,
+                test_command="pytest -q",
+                timeout=120,
+            )
             test_raw = self.provider.generate(test_system, test_user)
             try:
                 test_payload = json.loads(test_raw)
@@ -168,11 +173,21 @@ class EnhancedRunner:
 
         # GitAgent
         if "GitAgent" in slice_def.get("agents", []):
-            git_system, git_user = self._format_prompt("git_agent", slice_id=slice_id, normalized_patch=normalized, commit_message=f"Update {slice_id}", push=False)
+            git_system, git_user = self._format_prompt(
+                "git_agent",
+                slice_id=slice_id,
+                normalized_patch=normalized,
+                commit_message=f"Update {slice_id}",
+                push=False,
+            )
             # GitAgent is offline (no provider call) in this prototype; emit safe steps
             git_payload = {
                 "branch": f"lintley/{slice_id}",
-                "commands": [f"git checkout -b lintley/{slice_id}", "git apply patch", "pytest -q"],
+                "commands": [
+                    f"git checkout -b lintley/{slice_id}",
+                    "git apply patch",
+                    "pytest -q",
+                ],
                 "rollback": ["git reset --hard HEAD~1"],
             }
             self._emit("git_steps", plan_task, slice_id, git_payload)

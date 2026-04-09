@@ -20,7 +20,6 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import TypedDict, Optional
-import subprocess
 
 # State directory
 STATE_DIR = Path(".hitl_state")
@@ -159,7 +158,11 @@ def setup_provider():
 
     print(f"✅ Provider: {provider.upper()}")
 
-    config = {"provider": provider, "api_key": api_key, "saved_at": datetime.now().isoformat()}
+    config = {
+        "provider": provider,
+        "api_key": api_key,
+        "saved_at": datetime.now().isoformat(),
+    }
     save_config(config)
     print(f"✅ Config saved to {CONFIG_FILE}")
 
@@ -273,7 +276,7 @@ def dashboard_cmd():
             print("📡 HITL DASHBOARD")
             print("=" * 80)
 
-            print(f"\n📈 Overview:")
+            print("\n📈 Overview:")
             print(f"  Total tasks: {len(tasks)}")
             print(f"  Pending approval: {len(pending_approval)}")
 
