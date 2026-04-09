@@ -3,8 +3,6 @@
 This is a thin shim around the existing MockProvider to provide a stable
 "adapter" surface for later real provider implementations.
 """
-from typing import Any
-
 from providers.mock_provider import MockProvider
 
 
