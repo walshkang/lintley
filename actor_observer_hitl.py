@@ -16,7 +16,8 @@ Flow: API Setup → Task → Actor → Observer → [Risk Assessment] → HITL G
 import json
 import sys
 import os
-from typing import TypedDict, Optional
+from pathlib import Path
+from typing import TypedDict
 
 # Provider imports (lazy-loaded)
 anthropic = None
@@ -57,7 +58,12 @@ class ProviderClient:
             openai = openai_module
             self.client = openai_module.OpenAI(api_key=self.api_key)
 
-    def generate(self, system_prompt: str, user_message: str, max_tokens: int = 1000) -> str:
+    def generate(
+        self,
+        system_prompt: str,
+        user_message: str,
+        max_tokens: int = 1000,
+    ) -> str:
         """Generate response using the configured provider."""
         if self.provider == "anthropic":
             response = self.client.messages.create(
@@ -93,7 +99,6 @@ class ProviderClient:
     @staticmethod
     def detect_provider(api_key: str) -> str:
         """Detect provider from API key format."""
-        api_key_prefix = api_key[:3].lower()
 
         # Anthropic keys start with "sk-ant-"
         if api_key.startswith("sk-ant-"):
@@ -111,7 +116,6 @@ class ProviderClient:
     def list_models(provider: str, api_key: str) -> list:
         """List available models for the provider."""
         if provider == "anthropic":
-            import anthropic as anthropic_module
             # Anthropic has known models
             return [
                 "claude-opus-4-6",
@@ -146,7 +150,7 @@ class ProviderClient:
                 return ["gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"]
 
 
-def setup_provider() -> ProviderClient:
+def setup_provider() -> ProviderClient:  # noqa: C901
     """Configure provider from environment, .env.local, or interactively.
 
     Returns a ready ProviderClient instance when possible.
@@ -265,21 +269,28 @@ def setup_provider() -> ProviderClient:
         sys.exit(1)
 
 
-def actor_agent(provider: ProviderClient, task: str, context: str = "") -> AgentResponse:
+def actor_agent(
+    provider: ProviderClient,
+    task: str,
+    context: str = "",
+) -> AgentResponse:
     """
     The Actor Agent performs the primary task.
     It generates a solution and exposes its reasoning.
     """
-    system_prompt = """You are the Actor Agent. Your job is to complete the assigned task thoroughly and carefully.
+    system_prompt = (
+        "You are the Actor Agent. Your job is to complete the assigned task "
+        "thoroughly and carefully.\n\n"
+        "IMPORTANT: Always structure your response with:\n"
+        "1. ANALYSIS: Your step-by-step thinking\n"
+        "2. DECISION: Your final decision/solution\n"
+        "3. CONFIDENCE: Your confidence level (high/medium/low) and any caveats\n\n"
+        "Be explicit about assumptions you're making and limitations you're aware of."
+    )
 
-IMPORTANT: Always structure your response with:
-1. ANALYSIS: Your step-by-step thinking
-2. DECISION: Your final decision/solution
-3. CONFIDENCE: Your confidence level (high/medium/low) and any caveats
-
-Be explicit about assumptions you're making and limitations you're aware of."""
-
-    user_message = f"Task: {task}\n\nContext: {context}" if context else f"Task: {task}"
+    user_message = (
+        f"Task: {task}\n\nContext: {context}" if context else f"Task: {task}"
+    )
 
     content = provider.generate(system_prompt, user_message, max_tokens=1000)
     return {
@@ -353,9 +364,10 @@ def extract_section(text: str, section_name: str) -> str:
             in_section = True
             continue
         if in_section:
-            if line.startswith(("1.", "2.", "3.", "4.", "5.")) or (
-                any(s in line for s in ["ANALYSIS", "DECISION", "AUDIT", "RISK", "FINDING"])
-            ):
+            if line.startswith(("1.", "2.", "3.", "4.", "5.")):
+                break
+            markers = ["ANALYSIS", "DECISION", "AUDIT", "RISK", "FINDING"]
+            if any(s in line for s in markers):
                 break
             result.append(line)
     return "\n".join(result).strip()
@@ -410,7 +422,12 @@ def hitl_checkpoint(
     return approval_data
 
 
-def run_workflow(provider: ProviderClient, task: str, context: str = "", allow_auto_approve: bool = False):
+def run_workflow(
+    provider: ProviderClient,
+    task: str,
+    context: str = "",
+    allow_auto_approve: bool = False,
+):
     """
     Run the full Actor-Observer-HITL workflow.
     """
@@ -435,7 +452,7 @@ def run_workflow(provider: ProviderClient, task: str, context: str = "", allow_a
 
     # Step 4: HITL checkpoint
     if allow_auto_approve and risk_level == "low":
-        print(f"✅ Risk level is LOW - auto-approving.")
+        print("✅ Risk level is LOW - auto-approving.")
         approval = {"decision": "a", "modification_request": None}
     else:
         approval = hitl_checkpoint(task, actor_response, observer_response, risk_level)
