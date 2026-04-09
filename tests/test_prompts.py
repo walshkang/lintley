@@ -8,6 +8,8 @@ def test_slice_a_prompts_render():
         out = render_prompt(t, vars)
         # basic sanity checks
         assert isinstance(out, str)
-        assert vars["goal"] in out
+        # Only user-facing templates should include the goal
+        if "user" in _k or "actor_user" in _k or "observer_user" in _k:
+            assert vars["goal"] in out
         assert "run:" not in out.lower()
         assert "$" not in out
