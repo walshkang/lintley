@@ -29,6 +29,9 @@ class FakeProvider:
         return "{}"
 
 
+EXPECTED_EVENTS = 3
+
+
 def test_demo_runner_prints_json_lines(capsys):
     provider = FakeProvider()
     runner = DemoRunner(provider)
@@ -36,7 +39,7 @@ def test_demo_runner_prints_json_lines(capsys):
 
     captured = capsys.readouterr()
     lines = [line for line in captured.out.splitlines() if line.strip()]
-    assert len(lines) == 3
+    assert len(lines) == EXPECTED_EVENTS
 
     events = [json.loads(line) for line in lines]
     assert events[0]["event"] == "actor_proposal"

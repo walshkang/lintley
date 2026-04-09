@@ -48,7 +48,7 @@ class EnhancedRunner:
             user = ""
         return system, user
 
-    def run_slice(self, plan_task: str, slice_def: Dict[str, Any]):
+    def run_slice(self, plan_task: str, slice_def: Dict[str, Any]):  # noqa: C901, PLR0912, PLR0915
         """Run the agent pipeline for a single slice synchronously.
 
         Expected slice_def has: slice_id, path, context_excerpt, agents (list)

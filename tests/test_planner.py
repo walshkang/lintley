@@ -29,6 +29,9 @@ class FakeProvider:
         return "{}"
 
 
+SLICES_EXPECTED = 2
+
+
 def test_planner_plan_and_dispatch(capsys):
     context_files = {
         "a.py": "def f():\n    return 1\n",
@@ -39,7 +42,7 @@ def test_planner_plan_and_dispatch(capsys):
     plan = p.plan("Enable feature X", context_files, model_hint="balanced", concurrency_limit=2)
 
     assert "run_id" in plan
-    assert len(plan["slices"]) == 2
+    assert len(plan["slices"]) == SLICES_EXPECTED
     for s in plan["slices"]:
         assert "slice_id" in s
         assert "agents" in s
