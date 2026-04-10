@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""Shell-hook PoC: guarded_exec inspects a command and warns/blocks if risky.
+Usage: guarded_exec <command> [args...]
+This is a simple PoC that prints a JSON report and exits non-zero for risky commands.
+"""
+import sys
+from guardrails.monitor import main as monitor_main
+
+if __name__ == '__main__':
+    # Pass through all arguments to the guardrails monitor CLI
+    sys.exit(monitor_main(sys.argv[1:]))
