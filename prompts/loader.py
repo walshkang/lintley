@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 from typing import Any, Dict
 
 from utils.safety import sanitize_user_input
@@ -43,6 +44,9 @@ def render_prompt(template: str, variables: Dict[str, Any]) -> str:
     surface. If Jinja2 isn't available, fall back to safe format_map.
     """
     safe_vars = {k: sanitize_user_input(str(v)) for k, v in variables.items()}
+    # Normalize Jinja-style {{ var }} and spacing: "{{ goal }}" -> "{goal}"
+    clean_template = re.sub(r"{{\s*([A-Za-z0-9_]+)[^}]*}}", r"{\1}", template)
+    clean_template = re.sub(r"{\s*([A-Za-z0-9_]+)\s*}", r"{\1}", clean_template)
     # Use Jinja2 only when the template appears to use Jinja syntax ({{ }} or {% %})
     if _JINJA_AVAILABLE and _JINJA_ENV is not None and ("{{" in template or "{%" in template):
         try:
@@ -50,9 +54,9 @@ def render_prompt(template: str, variables: Dict[str, Any]) -> str:
             return tmpl.render(**safe_vars)
         except Exception:
             # Fall back to simple format if templating fails
-            return template.format_map(_Missing(**safe_vars))
+            return clean_template.format_map(_Missing(**safe_vars))
     # Default fallback: python format_map to preserve existing {var} templates
-    return template.format_map(_Missing(**safe_vars))
+    return clean_template.format_map(_Missing(**safe_vars))
 
 
 def list_available() -> list:
