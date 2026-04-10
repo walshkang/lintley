@@ -1,11 +1,73 @@
 #!/usr/bin/env python3
-"""Shell-hook PoC: guarded_exec inspects a command and warns/blocks if risky.
-Usage: guarded_exec <command> [args...]
-This is a simple PoC that prints a JSON report and exits non-zero for risky commands.
+"""Shell-hook PoC with interactive confirmation.
+Usage: guarded_exec [--yes|-y] [--execute|-x] <command> [args...]
+
+Behavior:
+ - By default, inspects the command and prints a JSON report. If risky, returns exit code 2.
+ - If --yes is passed, treat as confirmed (non-interactive).
+ - If --execute is passed, actually run the command after confirmation.
+
+This PoC intentionally requires --execute to actually run potentially-destructive commands.
 """
 import sys
-from guardrails.monitor import main as monitor_main
+import os
+import argparse
+import json
+import subprocess
+# Ensure repository root is on sys.path so local packages (guardrails) can be imported
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+from guardrails.monitor import detect_risky_command, suggest_safe_alternatives
+
+
+def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    parser = argparse.ArgumentParser(prog="guarded_exec")
+    parser.add_argument("-y", "--yes", action="store_true", help="auto-confirm prompts")
+    parser.add_argument("-x", "--execute", action="store_true", help="actually execute the command if allowed")
+    parser.add_argument("command", nargs=argparse.REMAINDER, help="Command to inspect and (optionally) run")
+    args = parser.parse_args(argv)
+
+    if not args.command:
+        print(json.dumps({"error": "no command provided"}))
+        return 1
+
+    cmd_list = args.command
+    cmd_str = " ".join(cmd_list)
+
+    score, reasons = detect_risky_command(cmd_str)
+    suggestion = suggest_safe_alternatives(cmd_str)
+    out = {
+        "cmd": cmd_str,
+        "risk_score": score,
+        "reasons": reasons,
+        "suggestion": suggestion,
+    }
+    print(json.dumps(out, indent=2))
+
+    # If risky and not auto-confirmed, prompt interactively
+    if score > 0 and not args.yes:
+        try:
+            resp = input("Risk detected. Proceed? [y/N]: ")
+        except EOFError:
+            resp = ""
+        if resp.strip().lower() not in ("y", "yes"):
+            print("Aborted by user")
+            return 2
+
+    # If execution requested, run the command (safe: only runs when --execute provided)
+    if args.execute:
+        try:
+            proc = subprocess.run(cmd_list)
+            return proc.returncode
+        except Exception as ex:
+            print(json.dumps({"error": str(ex)}))
+            return 1
+
+    # If not executing, succeed if not blocked
+    return 0
+
 
 if __name__ == '__main__':
-    # Pass through all arguments to the guardrails monitor CLI
-    sys.exit(monitor_main(sys.argv[1:]))
+    sys.exit(main())
