@@ -61,5 +61,41 @@ def main(argv: List[str] = None) -> int:
     return 2 if score > 0 else 0
 
 
+def audit_event(cmd: str, score: int, reasons: list, suggestion: str, confirmed: bool, executed: bool, audit_path: str | None = None) -> None:
+    """Append an audit event (JSON line) to the audit log.
+
+    Fields: cmd, risk_score, reasons, suggestion, confirmed, executed, ts
+    """
+    try:
+        # Lazy import to avoid cycles
+        from guardrails.config import ensure_audit_dir, load_config
+    except Exception:
+        from guardrails import config as _cfg
+        ensure_audit_dir = _cfg.ensure_audit_dir
+
+    if audit_path is None:
+        try:
+            audit_path = load_config().get("audit_path")
+        except Exception:
+            audit_path = ensure_audit_dir()
+    else:
+        ensure_audit_dir(audit_path)
+
+    event = {
+        "cmd": cmd,
+        "risk_score": score,
+        "reasons": reasons,
+        "suggestion": suggestion,
+        "confirmed": bool(confirmed),
+        "executed": bool(executed),
+    }
+    try:
+        with open(audit_path, "a", encoding="utf-8") as fh:
+            fh.write(json.dumps(event) + "\n")
+    except Exception:
+        # Do not let audit logging break main flow
+        pass
+
+
 if __name__ == "__main__":
     sys.exit(main())

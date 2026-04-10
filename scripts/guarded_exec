@@ -18,7 +18,8 @@ import subprocess
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
-from guardrails.monitor import detect_risky_command, suggest_safe_alternatives
+from guardrails.monitor import detect_risky_command, suggest_safe_alternatives, audit_event
+from guardrails.config import ensure_audit_dir, load_config
 
 
 def main(argv=None) -> int:
@@ -46,27 +47,46 @@ def main(argv=None) -> int:
     }
     print(json.dumps(out, indent=2))
 
-    # If risky and not auto-confirmed, prompt interactively
+    # Decide confirmation state
+    confirmed = False
     if score > 0 and not args.yes:
         try:
             resp = input("Risk detected. Proceed? [y/N]: ")
         except EOFError:
             resp = ""
-        if resp.strip().lower() not in ("y", "yes"):
+        if resp.strip().lower() in ("y", "yes"):
+            confirmed = True
+        else:
             print("Aborted by user")
+            # log the audit event as not confirmed / not executed
+            audit_path = ensure_audit_dir(load_config().get("audit_path"))
+            audit_event(cmd_str, score, reasons, suggestion, confirmed=False, executed=False, audit_path=audit_path)
             return 2
+    else:
+        # Auto-confirm via --yes or no risk
+        confirmed = args.yes or score == 0
 
     # If execution requested, run the command (safe: only runs when --execute provided)
+    executed = False
     if args.execute:
         try:
             proc = subprocess.run(cmd_list)
-            return proc.returncode
+            executed = True
+            return_code = proc.returncode
         except Exception as ex:
             print(json.dumps({"error": str(ex)}))
-            return 1
+            return_code = 1
+    else:
+        return_code = 0
 
-    # If not executing, succeed if not blocked
-    return 0
+    # Audit log the event
+    try:
+        audit_path = ensure_audit_dir(load_config().get("audit_path"))
+        audit_event(cmd_str, score, reasons, suggestion, confirmed=confirmed, executed=executed, audit_path=audit_path)
+    except Exception:
+        pass
+
+    return return_code
 
 
 if __name__ == '__main__':
